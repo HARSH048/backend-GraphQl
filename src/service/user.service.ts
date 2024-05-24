@@ -6,40 +6,54 @@ import Jwt from 'jsonwebtoken'
 const secret = 'your-secret-key';
 
 class UserService {
-    public static async createUser(payload:createUser){
-        const {email,password,firstName,lastName}=payload;
-        const salt=randomBytes(32).toString('hex');
-        const hashedPassword=createHmac('sha256',salt).update(password).digest('hex')
-       await prisma.user.create({
-                    data: {
-                      email,
-                      firstName,
-                      lastName,
-                      password:hashedPassword,
-                      salt
-                    }
-                  })
-        return "successfully created";
-    }
+  public static async createUser(payload: createUser) {
+    const { email, password, firstName, lastName } = payload;
+    const salt = randomBytes(32).toString("hex");
+    const hashedPassword = createHmac("sha256", salt)
+      .update(password)
+      .digest("hex");
+  const resp=  await prisma.user.create({
+      data: {
+        email,
+        firstName,
+        lastName,
+        password: hashedPassword,
+        salt,
+      },
+    });
+   return resp;
+  }
 
-    public static getHashPassword(salt:string,password:string){
-      const hashedPassword=createHmac('sha256',salt).update(password).digest('hex')
-      return hashedPassword;
-    }
+  public static getHashPassword(salt: string, password: string) {
+    const hashedPassword = createHmac("sha256", salt)
+      .update(password)
+      .digest("hex");
+    return hashedPassword;
+  }
 
-    public static async getJwtToken(payload:getJwtToken){
-      const {email,password}=payload;
-      const user=await prisma.user.findUnique({where:{email}});
+  public static async getJwtToken(payload: getJwtToken) {
+    const { email, password } = payload;
+    const user = await prisma.user.findUnique({ where: { email } });
 
-      if(!user) throw new Error('user does not exist')
+    if (!user) throw new Error("user does not exist");
 
-     const hashedPassword= await UserService.getHashPassword(user.salt,password)
-     if(user.password !== hashedPassword)
-      throw new Error('wrong password')
+    const hashedPassword = await UserService.getHashPassword(
+      user.salt,
+      password
+    );
+    if (user.password !== hashedPassword) throw new Error("wrong password");
 
-    const token= Jwt.sign({email,password},secret);
+    const token = Jwt.sign({ email, password }, secret);
     return token;
-    }
+  }
+
+  public static async getAllPostOfUser(payload: any) {
+    const { id } = payload;
+    return await prisma.user.findUnique({
+      where: { id },
+      include: { posts: true },
+    });
+  }
 }
 
 export default UserService;

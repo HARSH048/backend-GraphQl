@@ -17,5 +17,17 @@ model User {
   password String
   salt String
 
+  posts Post[]
+
   @@map("users")
+}
+
+model Post {
+  id       String  @id @default(uuid())
+  author   User @relation(fields: [authorId], references: [id])
+  authorId String
+  title String @map("post_title")
+  content String @map("post_content")
+
+  @@map("posts")
 }
